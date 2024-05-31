@@ -314,11 +314,15 @@ extension ViewController: UIImagePickerControllerDelegate, UINavigationControlle
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
         picker.dismiss(animated: true) {
             guard var image = info[.originalImage] as? UIImage else { return }
-            let w = min(1500, image.zl.width)
-            let h = w * image.zl.height / image.zl.width
-            image = image.zl.resize(CGSize(width: w, height: h)) ?? image
-            self.originalImage = image
-            self.editImage(image, editModel: nil)
+            let clipImageVC = ZLClipImageViewController(image: image, whRatio: 700.0 / 1225.0)
+            clipImageVC.modalPresentationStyle = .custom
+            clipImageVC.hiddenBottomBar = true
+            self.present(clipImageVC, animated: true)
+//            let w = min(1500, image.zl.width)
+//            let h = w * image.zl.height / image.zl.width
+//            image = image.zl.resize(CGSize(width: w, height: h)) ?? image
+//            self.originalImage = image
+//            self.editImage(image, editModel: nil)
         }
     }
 }
