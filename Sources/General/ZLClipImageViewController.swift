@@ -40,10 +40,15 @@ extension ZLClipImageViewController {
     }
 }
 
+public protocol ZLClipImageViewControllerDelegate: NSObjectProtocol {
+    func clipImageViewController(_ clipImageViewController: ZLClipImageViewController, didFinishClip clipImage: UIImage)
+}
+
 open class ZLClipImageViewController: UIViewController {
-    static let bottomToolViewH: CGFloat = 90
+    static var bottomToolViewH: CGFloat = 90
+    static var clipRatioItemSize  = CGSize(width: 60, height: 70)
     
-    static let clipRatioItemSize  = CGSize(width: 60, height: 70)
+    public weak var delegate: ZLClipImageViewControllerDelegate?
     
     var animateDismiss = true
     
@@ -127,7 +132,7 @@ open class ZLClipImageViewController: UIViewController {
     var dismissAnimateImage: UIImage?
     
     // Angle, edit rect, clip ratio
-    var clipDoneBlock: ((CGFloat, CGRect, ZLImageClipRatio) -> Void)?
+    public var clipDoneBlock: ((CGFloat, CGRect, ZLImageClipRatio) -> Void)?
     
     var cancelClipBlock: (() -> Void)?
     
@@ -184,7 +189,10 @@ open class ZLClipImageViewController: UIViewController {
     
     public override func viewDidLoad() {
         super.viewDidLoad()
-        
+        if self.hiddenBottomBar {
+            ZLClipImageViewController.bottomToolViewH = 0
+            ZLClipImageViewController.clipRatioItemSize = .zero
+        }
         setupUI()
         generateThumbnailImage()
     }
@@ -382,12 +390,12 @@ open class ZLClipImageViewController: UIViewController {
     /// 计算做大裁剪范围
     func calculateMaxClipFrame() -> CGRect {
         var insets = deviceSafeAreaInsets()
-        insets.top += 20
+        insets.top = 20
         var rect = CGRect.zero
         rect.origin.x = 15
         rect.origin.y = insets.top
-        rect.size.width = UIScreen.main.bounds.width - 15 * 2
-        rect.size.height = UIScreen.main.bounds.height - insets.top - ZLClipImageViewController.bottomToolViewH - ZLClipImageViewController.clipRatioItemSize.height - 25
+        rect.size.width = self.view.frame.width - 15 * 2
+        rect.size.height = self.view.frame.height - insets.top - ZLClipImageViewController.bottomToolViewH - ZLClipImageViewController.clipRatioItemSize.height - 25
         return rect
     }
     
@@ -528,12 +536,16 @@ open class ZLClipImageViewController: UIViewController {
         clipRatioColView.reloadData()
     }
     
-    @objc func doneBtnClick() {
+    @objc public func doneBtnClick() {
         let image = clipImage()
-        dismissAnimateFromRect = clipBoxFrame
-        dismissAnimateImage = image.clipImage
-        clipDoneBlock?(angle, image.editRect, selectedRatio)
-        dismiss(animated: animateDismiss, completion: nil)
+        if self.delegate != nil {
+            self.delegate?.clipImageViewController(self, didFinishClip: image.clipImage)
+        }else {
+            dismissAnimateFromRect = clipBoxFrame
+            dismissAnimateImage = image.clipImage
+            clipDoneBlock?(angle, image.editRect, selectedRatio)
+            dismiss(animated: animateDismiss, completion: nil)
+        }
     }
     
     @objc func rotateBtnClick() {
